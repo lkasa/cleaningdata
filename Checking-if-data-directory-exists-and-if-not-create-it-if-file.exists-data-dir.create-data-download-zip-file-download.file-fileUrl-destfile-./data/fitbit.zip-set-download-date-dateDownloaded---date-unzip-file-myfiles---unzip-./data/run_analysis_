@@ -1,0 +1,77 @@
+##Checking if data directory exists and if not create it
+if(!file.exists("data")){
+ dir.create("data")
+}
+
+##download zip file
+download.file(fileUrl, destfile = "./data/fitbit.zip")
+
+##set download date
+dateDownloaded <- date()
+
+##unzip file
+myfiles <- unzip("./data/fitbit.zip")
+
+## run the dplyr package
+library(dplyr)
+
+## read the activity lables and features files
+activity_labels <- read.table("activity_labels.txt", header = FALSE)
+features <- read.table("features.txt", header = FALSE)
+
+## read the test data for subject, x, and y
+subject_test <- read.table("subject_test.txt, header = FALSE")
+X_test <- read.table("X_test.txt", header = FALSE)
+y_test <- read.table("y_test.txt", header = FALSE)
+
+## read the training data for subject, x and y
+subject_train <- read.table("subject_train.txt", header = FALSE)
+X_train <- read.table("X_train.txt", header = FALSE)
+y_train <- read.table("y_train.txt", header = FALSE)
+
+#combine the subject and x and y data
+
+subjectdata <- rbind(subject_train, subject_test)
+ydata <- rbind(y_train, y_test)
+xdata <- rbind(X_train, X_test)
+
+
+
+##renaming
+names(subjectdata) <- c("subject")
+names(ydata) <- c("activity")
+xdatanames <- features
+names(xdata) <- xdatanames$V2
+
+##combining all the columns together
+mydata1 <- cbind(subjectdata, ydata)
+mydata2 <- cbind(xdata, mydata1)
+
+##taking only the means and Standerd deviations
+sapply(subjectdata, mean, na.rm=TRUE)
+sapply(subjectdata, sd, na.rm=TRUE)
+sapply(xdata, mean, na.rm=TRUE)
+sapply(xdata, sd, na.rm=TRUE)
+sapply(ydata, mean, na.rm=TRUE)
+sapply(ydata, sd, na.rm=TRUE)
+
+
+##Adding names to the numerical attriutes
+mydata2$activity[mydata2$activity==1]<- "Walk"
+mydata2$activity[mydata2$activity==2]<- "WalkUp"
+mydata2$activity[mydata2$activity==3]<- "WalkDown"
+mydata2$activity[mydata2$activity==4]<- "Sit"
+mydata2$activity[mydata2$activity==5]<- "Stand"
+mydata2$activity[mydata2$activity==6]<- "Lay"
+
+#making headers more descriptive and easier to read
+names(mydata2) <- gsub("^t","time", names(mydata2))
+names(mydata2) <- gsub("^f","frequency", names(mydata2))
+names(mydata2) <- gsub("Acc","Accelerometer", names(mydata2))
+names(mydata2) <- gsub("Gyro","Gyroscope", names(mydata2))
+names(mydata2) <- gsub("BodyBody","Body", names(mydata2))
+
+#making the joined text file
+library(plyr)
+answer <- aggregate(. ~subject + activity, mydata2, mean)
+answer <- answer[order(answer$subject, answer$activity),]
